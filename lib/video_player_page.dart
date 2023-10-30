@@ -12,6 +12,7 @@ class VideoPlayerPage extends StatefulWidget {
 class _VideoPlayerPageState extends State<VideoPlayerPage> {
   late VideoPlayerController _controller;
   late Future<void> isInitialized;
+  bool isVisible = true;
   @override
   void initState() {
     super.initState();
@@ -62,9 +63,92 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             );
           }
           if (snapshot.connectionState == ConnectionState.done) {
-            return AspectRatio(
-                aspectRatio: _controller.value.aspectRatio,
-                child: VideoPlayer(_controller));
+            return Column(
+              children: [
+                AspectRatio(
+                  aspectRatio: _controller.value.aspectRatio,
+                  child: Stack(
+                    children: [
+                      VideoPlayer(_controller),
+                      Center(
+                        child: AnimatedOpacity(
+                          duration: Duration(seconds: 1),
+                          opacity: isVisible ? 1 : 0,
+                          child: Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white.withOpacity(0.3)),
+                            child: InkWell(
+                              onTap: () {
+                                if (_controller.value.isPlaying) {
+                                  _controller.pause();
+                                  isVisible = true;
+                                } else {
+                                  _controller.play();
+                                  isVisible = false;
+                                }
+                                setState(() {});
+                              },
+                              child: Icon(_controller.value.isPlaying
+                                  ? Icons.pause
+                                  : Icons.play_arrow),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: InkWell(
+                          onDoubleTap: () {
+                            if (_controller.value.position > Duration.zero) {
+                              var nextPosition = _controller.value.position +
+                                  Duration(seconds: 10);
+                              _controller.seekTo(nextPosition);
+                            }
+                          },
+                          child: Container(
+                            width: 100,
+                            height: double.infinity,
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: InkWell(
+                          onDoubleTap: () {
+                            if (_controller.value.position -
+                                    Duration(seconds: 10) >
+                                Duration.zero) {
+                              var prevDuration = _controller.value.position -
+                                  Duration(seconds: 10);
+                              _controller.seekTo(prevDuration);
+                            }
+                          },
+                          child: Container(
+                            width: 100,
+                            height: double.infinity,
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Slider(
+                  activeColor: Colors.red,
+                  inactiveColor: Colors.grey,
+                  value: _controller.value.position.inMilliseconds.toDouble(),
+                  min: 0.0,
+                  max: _controller.value.duration.inMilliseconds.toDouble(),
+                  onChanged: (value) {
+                    _controller.seekTo(Duration(milliseconds: value.toInt()));
+                  },
+                ),
+              ],
+            );
           }
           return Container();
         },
